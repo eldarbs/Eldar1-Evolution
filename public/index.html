@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark - בית המדרש הדיגיטלי החדש</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rubik', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    },
+                    animation: {
+                        fadeIn: 'fadeIn 0.3s ease-out forwards',
+                        slideUp: 'slideUp 0.4s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.98)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Rubik', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+    <!-- React & Babel Standalone CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Configuration load -->
+    <script src="js/config.js"></script>
+
+    <!-- React Code -->
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Custom Synthesized Audio Engine (No external dependencies)
+        const playSound = (type) => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                if (type === 'success') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(330, ctx.currentTime); 
+                    osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.3); 
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.32);
+                } else if (type === 'error') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(80, ctx.currentTime + 0.4);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.45);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.45);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(500, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.1);
+                } else if (type === 'level-up') {
+                    const now = ctx.currentTime;
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(261.63, now); 
+                    osc.frequency.setValueAtTime(329.63, now + 0.1); 
+                    osc.frequency.setValueAtTime(392.00, now + 0.2); 
+                    osc.frequency.setValueAtTime(523.25, now + 0.3); 
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.1, now + 0.4);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+                    osc.start();
+                    osc.stop(now + 0.6);
+                }
+            } catch (e) {
+                console.log("Audio contexts aren't fully active yet or not supported.");
+            }
+        };
+
+        const SUBJECTS = {
+            gemara: {
+                id: 'gemara',
+                title: 'גמראספארק',
+                subtitle: 'TALMUD GAMIFIED FOR THE NEW GEN',
+                icon: 'fa-book-open',
+                color: 'amber',
+                gradient: 'from-amber-500 to-orange-600',
+                border: 'border-amber-500/30',
+                text: 'text-amber-400',
+                bgLight: 'bg-amber-500/10',
+                hoverGlow: 'hover:shadow-amber-500/10',
+                badgeBg: 'bg-amber-950/40 text-amber-300 border-amber-800/60',
+                btnClass: 'bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-amber-500/25',
+                quizTitle: 'חידון האלופים בגמרא 👑',
+                dictTitle: 'מילון סלנג ארמי 📖',
+                dictSubtitle: 'הפוך את כרטיסיות המילים כדי להבין את השפה הסודית של התלמוד!',
+                battleTitle: 'סימולטור קרב מוחות: אביי נגד רבא ⚔️',
+                battleSubtitle: 'התחל דו-שיח אינטלקטואלי בין שני ענקי התלמוד הגדולים. מי ינצח בוויכוח?',
+                dashboardTitle: 'דאשבורד לימוד גמרא 📊'
+            },
+            tanakh: {
+                id: 'tanakh',
+                title: 'תנ״ךספארק',
+                subtitle: 'BIBLE DISCOVERED FOR THE NEW GEN',
+                icon: 'fa-scroll',
+                color: 'emerald',
+                gradient: 'from-emerald-500 to-teal-600',
+                border: 'border-emerald-500/30',
+                text: 'text-emerald-400',
+                bgLight: 'bg-emerald-500/10',
+                hoverGlow: 'hover:shadow-emerald-500/10',
+                badgeBg: 'bg-emerald-950/40 text-emerald-300 border-emerald-800/60',
+                btnClass: 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-emerald-500/25',
+                quizTitle: 'חידון האלופים בתנ״ך 👑',
+                dictTitle: 'מילון מקראי עתיק 📖',
+                dictSubtitle: 'חקור מילים ייחודיות ומונחים מקראיים עתיקים מספר הספרים!',
+                battleTitle: 'עימות המלכים: דוד נגד גוליית ⚔️',
+                battleSubtitle: 'שחזר את הקרב המפורסם בעמק האלה. אמונה ותחבולה נגד כוח פיזי מוחלט!',
+                dashboardTitle: 'דאשבורד לימוד תנ״ך 📊'
+            },
+            zohar: {
+                id: 'zohar',
+                title: 'זוהראספארק',
+                subtitle: 'KABBALAH REVEALED FOR THE NEW GEN',
+                icon: 'fa-wand-magic-sparkles',
+                color: 'indigo',
+                gradient: 'from-indigo-500 to-purple-600',
+                border: 'border-indigo-500/30',
+                text: 'text-indigo-400',
+                bgLight: 'bg-indigo-500/10',
+                hoverGlow: 'hover:shadow-indigo-500/10',
+                badgeBg: 'bg-indigo-950/40 text-indigo-300 border-indigo-800/60',
+                btnClass: 'bg-indigo-500 text-slate-950 hover:bg-indigo-400 shadow-indigo-500/25',
+                quizTitle: 'חידון סודות הזוהר 👑',
+                dictTitle: 'מילון מונחי קבלה וסוד 📖',
+                dictSubtitle: 'גלה את המשמעות העמוקה של מושגי היסוד בתורת הנסתר היהודית!',
+                battleTitle: 'שיח המקובלים: רשב״י נגד רבי פנחס ⚔️',
+                battleSubtitle: 'התחל דיון רוחני עמוק על גילוי סודות התורה וחיבור העולמות העליונים!',
+                dashboardTitle: 'דאשבורד סוד וזוהר 📊'
+            }
+        };
+
+        const SUBJECTS_DATA = {
+            gemara: {
+                sugyot: [
+                    {
+                        id: 'shnayim-ochzin',
+                        title: 'שניים אוחזין בטלית 🧥',
+                        tractate: 'בבא מציעא ב ע"א',
+                        difficulty: 'קל',
+                        description: 'שני אנשים מגיעים לבית דין כשארוג עליהם מעיל אחד. שניהם צועקים: "אני מצאתי! הכל שלי!" מי מקבל מה ואיך פותרים את הבלגן הגדול?',
+                        visualSteps: [
+                            {
+                                title: 'הדרמה מתחילה',
+                                character: 'התובעים',
+                                dialogue: 'משה: "מצאתי את הגלימה הזו ראשון!" \nדוד: "שקר! אני ראיתי אותה קודם והיא כולה שלי!"',
+                                explanation: 'הדילמה הבסיסית: שני אנשים מחזיקים פיזית באותו החפץ, ושניהם טוענים לבעלות מלאה. אין לאף אחד מהם הוכחה חיצונית (שטר או עדים).',
+                                slang: 'דמיינו שני חבר׳ה בקניון שרצים לעבר הזוג האחרון של הסניקרס הכי מבוקשות, ושניהם שמים עליהם יד באותה שניה בדיוק. מה עושים?'
+                            },
+                            {
+                                title: 'פסק הדין המקורי',
+                                character: 'בית הדין',
+                                dialogue: 'הדיין: "מכיוון ששניכם אוחזים בה, כל אחד יישבע שאין לו בה פחות מחצי – ויחלוקו!"',
+                                explanation: 'דין חלוקה בשבועה: חצי מהחפץ עובר לכל צד, אך רק לאחר ששניהם נשבעים בבית הדין שחלקם בחפץ אינו נופל מחצי.',
+                                slang: 'בית הדין אומר: "בגלל שאין עדים, שניכם תתחייבו להצהיר ברצינות שאתם באמת מאמינים שחצי שלכם – ואז נגזור את הסניקרס/הטלית לחצי או שנמכור ונתחלק בכסף."'
+                            }
+                        ]
+                    },
+                    {
+                        id: 'elu-metziot',
+                        title: 'אלו מציאות 💰',
+                        tractate: 'בבא מציעא כא ע"ב',
+                        difficulty: 'בינוני',
+                        description: 'מצאתם כסף ברחוב, שטרות מפוזרים או עיגולי דבש? מתי מותר לכם לשמור אותם לעצמכם, ומתי אתם חייבים לרוץ ולחפש את הבעלים?',
+                        visualSteps: [
+                            {
+                                title: 'המציאה ברחוב',
+                                character: 'המוצא',
+                                dialogue: 'שלמה: "יו, מצאתי שטר של 100 שקל זרוק על המדרכה! יש פה גם מטבעות מפוזרים! איזה מזל!"',
+                                explanation: 'הגמרא דנה באבדות שאין בהן סימן זיהוי ייחודי, ומניחה שהבעלים התייאשו מהן ברגע שהבינו שהן אבדו.',
+                                slang: 'מצאתם שטר כסף חלק בלי ארנק או שם. אין סיכוי בעולם שהבעלים יוכיח שזה שלו, כי שטרות נראים אותו דבר. מותר לשמור?'
+                            },
+                            {
+                                title: 'ייאוש שלא מדעת',
+                                character: 'החכמים',
+                                dialogue: 'אביי: "ייאוש שלא מדעת לא הוי ייאוש!" \nרבא: "הוי ייאוש!"',
+                                explanation: 'מחלוקת אביי ורבא: אם הבעלים עדיין לא יודע שהחפץ אבד, אך כשידע בוודאי יתייאש. אביי אומר שזה לא ייאוש חוקי כרגע, ורבא אומר שזה נחשב ייאוש.',
+                                slang: 'הבעלים איבד את השטר אבל עדיין לא הכניס יד לכיס ולא גילה את זה. האם המציאה הופכת לשלך כבר עכשיו (רבא), או שרק ברגע שהוא יגלה את האבדה ויתייאש היא מותרת (אביי)?'
+                            }
+                        ]
+                    }
+                ],
+                dictionary: [
+                    { word: 'תיקו', type: 'מושג', meaning: 'תעמוד - השאלה נשארת פתוחה ללא הכרעה.', association: 'משחק כדורגל שמסתיים בשוויון 1:1 ללא מנצחים.' },
+                    { word: 'קשיא', type: 'ביקורת', meaning: 'קשה - קושיה או קושי לוגי על דברי חכם כלשהו.', association: 'כשיש חור בעלילה של סרט ואתה אומר "רגע, זה לא הגיוני!".' },
+                    { word: 'איבעיא להו', type: 'מילות קישור', meaning: 'נשאלה להם - פתיחה לשאלה משפטית או לוגית שהתעוררה בבית המדרש.', association: 'כשאחד החברים זורק שאלה היפותטית: "תגידו, מה היה קורה אם...?"' },
+                    { word: 'קא משמע לן', type: 'מילות קישור', meaning: 'משמיע לנו - בא ללמדנו דין או הבנה חדשה שלא ידענו קודם.', association: 'כשהמורה אומר "וזה הפאנץ\' ליין שחשוב שתזכרו לבגרות".' },
+                    { word: 'תא שמע', type: 'מילות קישור', meaning: 'בוא ושמע - מונח שמציג מקור חיצוני (כמו משנה או ברייתא) כדי לפתור או לתמוך בדיון.', association: 'כשיש ויכוח בקבוצת וואטסאפ ומישהו שולח צילום מסך של ההודעה המקורית כדי להוכיח את טענתו.' },
+                    { word: 'מאי נפקא מינה', type: 'ביקורת', meaning: 'מה יוצא מזה - מהו ההבדל המעשי או ההשלכה המשפטית של המחלוקת הזו?', association: 'כשמישהו מתווכח איתך שעות ואתה קוטע אותו ושואל: "אוקיי, תכלס מה זה משנה בשטח?"' }
+                ],
+                quiz: [
+                    {
+                        question: 'מהו דין "שניים אוחזין בטלית" לפי פסק הדין המקורי במשנה?',
+                        options: ['מניחים אותה בצד עד שיבוא אליהו', 'הראשון שרץ לבית דין מקבל הכל', 'יישבעו שניהם שאין להם פחות מחצי ויחלוקו', 'עושים מכרז ומי שמשלם יותר זוכה'],
+                        correctIndex: 2
+                    },
+                    {
+                        question: 'באיזה מקרה של מציאת אבדה מותר למוצא לשמור אותה לעצמו מיד?',
+                        options: ['כאשר יש על החפץ שם וכתובת ברורים', 'כאשר המציאה היא חפץ שאין בו סימן והבעלים יתייאשו ממנו', 'כאשר מצא את החפץ בתוך בית של מישהו אחר', 'כאשר מדובר בספר תורה עתיק'],
+                        correctIndex: 1
+                    },
+                    {
+                        question: 'מהי מחלוקת אביי ורבא המפורסמת בנוגע לייאוש באבדה?',
+                        options: ['האם מותר להחזיר אבדה בלילה', 'האם ייאוש שלא מדעת נחשב ייאוש', 'האם מותר לשבור חפץ כדי לחלוק אותו', 'האם שבועה בבית דין מחייבת תשלום'],
+                        correctIndex: 1
+                    }
+                ],
+                warriors: [
+                    { id: 'abaye', name: 'אביי', title: 'גאון פומבדיתא', avatar: '🔥', hp: 100, maxHp: 100, energy: 3, maxEnergy: 3, deck: [
+                        { name: 'פרכת קושיא', cost: 1, type: 'attack', power: 25, desc: 'מקשה קושיה חזקה מהמשנה שמחלישה את היריב. (25 נזק)' },
+                        { name: 'סייעתא דשמיא', cost: 2, type: 'heal', power: 30, desc: 'מגייס סיעתא דשמיא ומחזק את בריאותו הרוחנית. (30 חיים)' },
+                        { name: 'הוכחה מהברייתא', cost: 2, type: 'attack', power: 35, desc: 'מביא מקור תנאי חזק ומכריע. (35 נזק)' }
+                    ] },
+                    { id: 'rava', name: 'רבא', title: 'ראש ישיבת מחוזא', avatar: '⚡', hp: 100, maxHp: 100, energy: 3, maxEnergy: 3, deck: [
+                        { name: 'תירוץ מוחץ', cost: 1, type: 'attack', power: 20, desc: 'מיישב את הקושיה ומציג הבנה יסודית חדשה. (20 נזק)' },
+                        { name: 'שיטת מחוזא', cost: 2, type: 'heal', power: 25, desc: 'חשיבה יצירתית מבריקה שממלאת כוחות מחדש. (25 חיים)' },
+                        { name: 'ייאוש שלא מדעת', cost: 2, type: 'attack', power: 40, desc: 'משתמש בלוגיקה המפורסמת שלו כדי להכריע. (40 נזק)' }
+                    ] }
+                ]
+            },
+            tanakh: {
+                sugyot: [
+                    {
+                        id: 'david-goliath',
+                        title: 'דוד וגוליית ⚔️',
+                        tractate: 'שמואל א פרק יז',
+                        difficulty: 'קל',
+                        description: 'עמק האלה רועד. פלשתים נגד ישראל. ענק משוריין יוצא לדו-קרב, ורק רועה צאן קטן עם מקלע אבנים מוכן להתייצב מולו. איך נסחפת המערכה?',
+                        visualSteps: [
+                            {
+                                title: 'האיום הפלשתי',
+                                character: 'גוליית הפלשתי',
+                                dialogue: 'גוליית: "בחרו לכם איש וירד אלי! אם יוכל להילחם אתי והכני – והיינו לכם לעבדים!"',
+                                explanation: 'איומו של ענק פלשתי בגובה שש אמות וזרת, החמוש בשריון קשקשים, כידון נחושת וחרב אימתנית, המטיל אימה על מחנה שאול במשך 40 יום.',
+                                slang: 'דמיינו את נבחרת האריות של ה-NFL מעמידה את השחקן הכי ענק שלה במרכז המגרש, ושאר הקבוצות פשוט מפחדות לעלות לשחק מולו.'
+                            },
+                            {
+                                title: 'הנשק של דוד',
+                                character: 'דוד בן ישי',
+                                dialogue: 'דוד: "אתה בא אלי בחרב ובחנית ובכידון, ואנכי בא אליך בשם ה\' צבאות! חמש אבנים חלקות מן הנחל וקלע בידי!"',
+                                explanation: 'דוד מסרב ללבוש את שריון שאול הכבד. הוא בוחר בפשטות: חמש אבנים חלקות מהנחל, קלע רועים פשוט ואמונה שלמה בבורא.',
+                                slang: 'שאול מציע לדוד חליפת שריון משוכללת וכבדה. דוד אומר: "עזוב, זה לא הסטייל שלי, אני הולך על קל, מהיר ומדויק - אבן קטנה למצח ותראו איך הוא נופל."'
+                            }
+                        ]
+                    },
+                    {
+                        id: 'yam-suf',
+                        title: 'קריאת ים סוף 🌊',
+                        tractate: 'שמות פרק יד',
+                        difficulty: 'בינוני',
+                        description: 'הים מלפנים, המצרים מאחור, ומדבר אינסופי מסביב. בני ישראל זועקים מפחד. משה מטה את המטה והבלתי יאומן מתרחש – הים נבקע ליבשה!',
+                        visualSteps: [
+                            {
+                                title: 'המלכוד הגדול',
+                                character: 'בני ישראל',
+                                dialogue: 'העם: "המבלי אין קברים במצרים לקחתנו למות במדבר?! הים סוגר עלינו ומרכבות פרעה מתקרבות!"',
+                                explanation: 'עם שלם לכוד ללא דרך מילוט. מאחוריהם צבא מצרים האדיר עם מרכבות ברזל, ומלפניהם הים הגדול. פחד וייאוש אוחזים בעם.',
+                                slang: 'הרגשה של "אין לאן לברוח". מצד אחד קיר בטון (הים), מצד שני עדר זאבים (המצרים). כולם מתחילים להילחץ ולחפש אשמים.'
+                            },
+                            {
+                                title: 'בקוע את המים',
+                                character: 'משה רבנו',
+                                dialogue: 'משה: "אל תיראו! התייצבו וראו את ישועת ה\'. ה\' יילחם לכם ואתם תחרישון! מטה בידי והים ייבקע!"',
+                                explanation: 'הציווי האלוהי מורה למשה להרים את מטהו ולנטות את ידו על הים. רוח קדים עזה מנשבת כל הלילה והופכת את הים לחרבה, והמים להם חומה מימינם ומשמאלם.',
+                                slang: 'משה מרגיע את כולם ואומר: "תנשמו עמוק, תהיו בשקט ותראו מה קורה". הוא מרים את המקל שלו ופתאום הים נפתח לשני חצאים כמו שער חשמלי ענק, והאדמה בפנים יבשה לגמרי!'
+                            }
+                        ]
+                    }
+                ],
+                dictionary: [
+                    { word: 'אופיר', type: 'מקומות', meaning: 'ארץ מקראית עתיקה המפורסמת בזהב המשובח שלה.', association: 'כמו לומר "אל דוראדו" או "מכרות הזהב של המלך שלמה".' },
+                    { word: 'סלה', type: 'מושג', meaning: 'מילה המופיעה בעיקר בתהילים, שפירושה: לנצח, לתמיד, או סימן לעצירה מוזיקלית והרהור.', association: 'כמו לומר "אמן ואמן" או "נקודה למחשבה".' },
+                    { word: 'תרשיש', type: 'מקומות', meaning: 'עיר נמל מרוחקת ועשירה המוזכרת בתנ"ך, או אבן חן יקרה.', association: 'כמו לומר "הקצה השני של העולם" או יעד מרוחק ומסתורי.' },
+                    { word: 'כרובים', type: 'מושג', meaning: 'דמויות מלאכים בעלות כנפיים שהיו מעל ארון הברית בקודש הקודשים.', association: 'שומרי הסוד המלכותיים השומרים על הלוחות המקודשים.' },
+                    { word: 'אשמורת', type: 'מושג', meaning: 'חלק משלושת חלקי הלילה שבהם השומרים היו מתחלפים במשמרתם.', association: 'משמרת לילה בצבא - "אשמורת התיכונה".' },
+                    { word: 'קשת בענן', type: 'מושג', meaning: 'אות הברית שכרת אלוהים עם נח לאחר המבול שלא להשמיד שוב את העולם במים.', association: 'חוזה השלום הרשמי והצבעוני ביותר בהיסטוריה.' }
+                ],
+                quiz: [
+                    {
+                        question: 'מי הציע לדוד את שריונו האישי לפני הקרב עם גוליית?',
+                        options: ['יהונתן', 'שאול המלך', 'אבנר בן נר', 'אליאב אחיו'],
+                        correctIndex: 1
+                    },
+                    {
+                        question: 'איזו רוח השתמש בה אלוהים כדי לבקוע את ים סוף במשך כל הלילה?',
+                        options: ['רוח צפון עזה', 'רוח סערה מערבית', 'רוח קדים עזה', 'רוח דרומית קלה'],
+                        correctIndex: 2
+                    },
+                    {
+                        question: 'מה בחר דוד לקחת עמו כנשק לקרב נגד גוליית הפלשתי?',
+                        options: ['חרב פיפיות וכידון נחושת', 'קשת וחצים חלקים', 'חמש אבנים חלקות מן הנחל וקלע', 'מטה רועים משוריין'],
+                        correctIndex: 2
+                    }
+                ],
+                warriors: [
+                    { id: 'david', name: 'דוד בן ישי', title: 'רועה הצאן הקטן', avatar: '🐑', hp: 90, maxHp: 90, energy: 3, maxEnergy: 3, deck: [
+                        { name: 'אבן מהנחל', cost: 1, type: 'attack', power: 25, desc: 'קלע מדויק של אבן חלקה הישר למטרה. (25 נזק)' },
+                        { name: 'תחבולת רועים', cost: 2, type: 'attack', power: 30, desc: 'מהירות ותמרון זריז שמותירים את האויב חסר אונים. (30 נזק)' },
+                        { name: 'שם ה\' צבאות', cost: 2, type: 'heal', power: 35, desc: 'שואב ביטחון ואמונה עמוקה שמשיבה לו את כוחו. (35 חיים)' }
+                    ] },
+                    { id: 'goliath', name: 'גוליית הפלשתי', title: 'הענק המשוריין', avatar: '👹', hp: 120, maxHp: 120, energy: 3, maxEnergy: 3, deck: [
+                        { name: 'חרב אימתנית', cost: 1, type: 'attack', power: 25, desc: 'מכה כבדה עם חרבו הגדולה שמזעזעת את האדמה. (25 נזק)' },
+                        { name: 'שריון קשקשים', cost: 2, type: 'heal', power: 20, desc: 'מסתתר מאחורי שריון הברזל שלו ומאושש כוחות. (20 חיים)' },
+                        { name: 'איום וגידוף', cost: 2, type: 'attack', power: 35, desc: 'מטיל אימה ופחד בלבות הלוחמים שמחליש אותם. (35 נזק)' }
+                    ] }
+                ]
+            },
+            zohar: {
+                sugyot: [
+                    {
+                        id: 'bereshit-colors',
+                        title: 'גוונין דנהירין 🌌',
+                        tractate: 'בראשית א ע"א',
+                        difficulty: 'קשה',
+                        description: 'מתוך הערפל והאין-סוף בוקע ניצוץ סודי. הזוהר חושף את המבנה המיסטי של הבריאה – צבעי האור הרוחניים המניעים את היקום כולו.',
+                        visualSteps: [
+                            {
+                                title: 'בוצינא דקרדינותא',
+                                character: 'רשב"י',
+                                dialogue: 'רשב"י: "ניצוץ תקיף בוקע מתוך האין-סוף, כמלא מחט, צבעים נעלמים מתחילים להאיר בתוך הערפל!"',
+                                explanation: 'תחילת אצילות האור: מתוך הכתר העליון בוקע קו דק של אור (בוצינא דקרדינותא) שמתחיל לצייר את צבעי הספירות הראשונות.',
+                                slang: 'דמיינו מקרן קולנוע ענק בחדר חשוך לחלוטין. פתאום נדלק קו לייזר דק של אור לבן, וממנו מתחילה להצטייר תמונה תלת-ממדית צבעונית ומרהיבה.'
+                            },
+                            {
+                                title: 'עשר הספירות',
+                                character: 'המקובלים',
+                                dialogue: 'רבי פנחס: "עשרה לבושים של אור, מכתר ועד מלכות. כל צבע מייצג כוח רוחני אחר – חסד הוא לבן, גבורה היא אדום!"',
+                                explanation: 'סוד עשר הספירות כעשרה ערוצי אנרגיה אלוהיים שבאמצעותם נברא העולם ומנוהל בכל רגע. הצבעים מסמלים את הנהגות החסד, הדין והרחמים.',
+                                slang: 'כמו עשר תחנות כוח של אנרגיה ביקום. לכל תחנה יש תפקיד וצבע משלה - תחנת החסד מפיצה אהבה לבנה, תחנת הגבורה מפיצה משמעת וגבולות באדום, ותחנת התפארת מאזנת ביניהן בצהוב-זהב.'
+                            }
+                        ]
+                    },
+                    {
+                        id: 'safra-detzniuta',
+                        title: 'ספרא דצניעותא 📜',
+                        tractate: 'ספר הזוהר חלק ב',
+                        difficulty: 'קשה מאוד',
+                        description: 'ספר הצניעות - הטקסט הקבלי העמוק והמרוכז ביותר בזוהר. חמישה פרקים קצרים המקודדים את כל סודות האיזון הקוסמי ואיזון הזכר והנקבה הרוחניים.',
+                        visualSteps: [
+                            {
+                                title: 'מתקלא דלא הוי',
+                                character: 'המקובל',
+                                dialogue: 'המקובל: "לפני שנברא המשקל (המתקלא), העולם לא היה יכול להתקיים והכוחות הרוחניים התנפצו!"',
+                                explanation: 'סוד המשקל: הזוהר מתאר את תהליך בריאת האיזון בין כוחות הנתינה (זכר) לכוחות הקבלה (נקבה) בעולמות הרוחניים. ללא איזון זה, העולם נחרב.',
+                                slang: 'דמיינו נדנדה בגן שעשועים. אם רק ילד אחד ענק יישב עליה, היא תישאר תקועה למטה ולא תזוז. המשקל הרוחני מייצר איזון מושלם שמאפשר ליקום לזרום ולפעול.'
+                            },
+                            {
+                                title: 'תיקוני הפרצופים',
+                                character: 'המקובל העליון',
+                                dialogue: 'המקובל: "האורות מתלבשים בתוך לבושים ופרצופים רוחניים, כדי שהעולם הגשמי יוכל לקבל אותם בלי להישרף!"',
+                                explanation: 'תורת הפרצופים: חלוקת הכוחות האלוהיים למערכות מאוזנות (פרצופים כמו אריך אנפין וזעיר אנפין) שמעדנות את האור האינסופי לרמה שהאדם בעולם הזה יכול לקלוט.',
+                                slang: 'כמו שנאי חשמל ענק ברחוב שמוריד את המתח מ-10,000 וולט ל-220 וולט, כדי שהנורה בבית שלך לא תתפוצץ ברגע שתדליק את האור.'
+                            }
+                        ]
+                    }
+                ],
+                dictionary: [
+                    { word: 'עשר ספירות', type: 'מושג', meaning: 'עשרת ערוצי השפע והכוחות הרוחניים שבאמצעותם נברא ומנוהל העולם.', association: 'כמו עשרת הגוונים של מנסרת אור שיוצרים את כל צבעי הקשת.' },
+                    { word: 'אור אין סוף', type: 'מושג', meaning: 'מהותו המוחלטת והאינסופית של הבורא, לפני שהיא מצטמצמת לתוך העולמות.', association: 'האור המוחלט והחם שממלא את כל החלל ללא שום גבול ומגבלה.' },
+                    { word: 'שכינה', type: 'מושג', meaning: 'ההתגלות האלוהית בעולם הגשמי, הספירה התחתונה (מלכות) שמחיה את הנבראים.', association: 'האימא הרוחנית השומרת ומחבקת את ילדיה בעולם הזה.' },
+                    { word: 'צמצום', type: 'מושג', meaning: 'הפעולה שבה הבורא פינה כביכול את אורו כדי ליצור חלל פנוי שבו יוכלו להיברא עולמות גשמיים.', association: 'כמו הורה שמצמצם את צעדיו ומתכופף כדי שילדו הקטן יוכל ללכת לצידו.' },
+                    { word: 'סטרא אחרא', type: 'מושג', meaning: 'הצד האחר - מונח בזוהר המתאר את כוחות הרשע, הטומאה והאגו המנוגדים לקדושה.', association: 'כמו "הצד האפל" (Dark Side) של הכוח, שמפתה את האדם למרכז את הכל סביב עצמו.' },
+                    { word: 'תיקון', type: 'מושג', meaning: 'הפעולה האנושית של תיקון רוחני ומוסרי שמחברת מחדש את האורות המפוזרים למקורם.', association: 'איסוף והדבקה מחדש של שברי פאזל ענק שנשבר והתפזר בחדר.' }
+                ],
+                quiz: [
+                    {
+                        question: 'מי נחשב למחבר העיקרי של ספר הזוהר ובעל הניסים המיסטיים?',
+                        options: ['רבי יהודה הנשיא', 'רבי שמעון בר יוחאי (רשב"י)', 'הרמב"ם', 'האר"י הקדוש'],
+                        correctIndex: 1
+                    },
+                    {
+                        question: 'מהו המונח המתאר את עשרת ערוצי האנרגיה האלוהיים בקבלה?',
+                        options: ['עשרת הדיברות', 'עשר הספירות', 'עשרת השבטים', 'עשר המכות'],
+                        correctIndex: 1
+                    },
+                    {
+                        question: 'כיצד מכונה כוח הטומאה והרשע בספר הזוהר?',
+                        options: ['בוצינא דקרדינותא', 'מתקלא דלא הוי', 'הסטרא אחרא', 'ספרא דצניעותא'],
+                        correctIndex: 2
+                    }
+                ],
+                warriors: [
+                    { id: 'rashbi', name: 'רשב"י', title: 'בוצינא קדישא', avatar: '🌟', hp: 100, maxHp: 100, energy: 3, maxEnergy: 3, deck: [
+                        { name: 'רזא דרזין', cost: 1, type: 'attack', power: 25, desc: 'מגלה סוד עליון שמסנוור את היריב באור הקדושה. (25 נזק)' },
+                        { name: 'אור הגנוז', cost: 2, type: 'heal', power: 35, desc: 'ממשיך אור הגנוז מששת ימי בראשית ומחדש כוחותיו. (35 חיים)' },
+                        { name: 'אש הלהבה', cost: 2, type: 'attack', power: 40, desc: 'אש תורה מיסטית שמקיפה אותו ומכה ביריב. (40 נזק)' }
+                    ] },
+                    { id: 'pinhas', name: 'רבי פנחס', title: 'חסידא עילאה', avatar: '🕯️', hp: 100, maxHp: 100, energy: 3, maxEnergy: 3, deck: [
+                        { name: 'עומק הפשט', cost: 1, type: 'attack', power: 20, desc: 'מציג את יסודות המוסר והפשט שמקרקעים את הדיון. (20 נזק)' },
+                        { name: 'מעשים טובים', cost: 2, type: 'heal', power: 30, desc: 'כוח המעשים הטובים והצדקה שמגן עליו מפני פגע. (30 חיים)' },
+                        { name: 'חסידות פנימית', cost: 2, type: 'attack', power: 35, desc: 'כוח הזכות הרוחנית שלו שמחליש את היריב. (35 נזק)' }
+                    ] }
+                ]
+            }
+        };
+
+        function App() {
+            // Active subject state: gemara, tanakh, zohar
+            const [activeSubject, setActiveSubject] = useState('gemara');
+            const [activeTab, setActiveTab] = useState('home');
+            
+            const currentSub = SUBJECTS[activeSubject];
+            const currentData = SUBJECTS_DATA[activeSubject];
+
+            // Common states
+            const [score, setScore] = useState(0);
+            const [streak, setStreak] = useState(3);
+            const [quizCompleted, setQuizCompleted] = useState(false);
+
+            // Dynamic states that reset on subject change
+            const [selectedSugya, setSelectedSugya] = useState(null);
+            const [sugyaStep, setSugyaStep] = useState(0);
+            const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [isAnswered, setIsAnswered] = useState(false);
+            const [flippedCardIndex, setFlippedCardIndex] = useState(null);
+            const [dictSearch, setDictSearch] = useState('');
+
+            // Battle Simulator dynamic states
+            const [selectedWarrior, setSelectedWarrior] = useState(null);
+            const [battleState, setBattleState] = useState(null); // 'init', 'player-turn', 'enemy-turn', 'win', 'lose'
+            const [playerHp, setPlayerHp] = useState(100);
+            const [enemyHp, setEnemyHp] = useState(100);
+            const [playerEnergy, setPlayerEnergy] = useState(3);
+            const [battleLogs, setBattleLogs] = useState([]);
+            const [isBattling, setIsBattling] = useState(false);
+
+            // AI Chavruta states
+            const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemara_spark_api_key') || window.GEMARA_SPARK_CONFIG?.apiKey || '');
+            const [apiKeyInput, setApiKeyInput] = useState('');
+            const [selectedChatSugya, setSelectedChatSugya] = useState('free-study');
+            const [chatMessages, setChatMessages] = useState([]);
+            const [userChatInput, setUserChatInput] = useState('');
+            const [isGenerating, setIsGenerating] = useState(false);
+
+            // Toast Alert state
+            const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+            const triggerToast = (msg, type) => {
+                setToast({ show: true, message: msg, type });
+                setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
+            };
+
+            // Set default sugya when subject changes
+            useEffect(() => {
+                setSelectedSugya(currentData.sugyot[0]);
+                setSugyaStep(0);
+                setCurrentQuizIndex(0);
+                setSelectedOption(null);
+                setIsAnswered(false);
+                setQuizCompleted(false);
+                setFlippedCardIndex(null);
+                setDictSearch('');
+                
+                // Reset Battle
+                setIsBattling(false);
+                setSelectedWarrior(null);
+                setBattleState(null);
+                
+                // Initialize Chavruta Welcome Messages based on subject
+                const welcomeMsg = activeSubject === 'gemara'
+                    ? 'שלום עליכם! אני החברותא הדיגיטלי שלך לגמרא. בחר סוגיה ממוקדת בצד או בחר בלימוד חופשי ושאל אותי כל שאלה!'
+                    : activeSubject === 'tanakh'
+                    ? 'שלום עליך! אני חברותא התנ״ך הדיגיטלי שלך. שאל אותי שאלות על הפרשות, הדמויות המקראיות, או מילים בתורה!'
+                    : 'באת בשלום אל שער הרזים! אני השותף שלך ללימוד סודות הזוהר והקבלה. שאל אותי על הספירות, דברי רשב״י או סתרי תורה!';
+                
+                setChatMessages([{ role: 'model', text: welcomeMsg }]);
+                setSelectedChatSugya('free-study');
+            }, [activeSubject]);
+
+            // Quiz handlers
+            const handleAnswerSubmit = (optionIdx) => {
+                if (isAnswered) return;
+                setSelectedOption(optionIdx);
+                setIsAnswered(true);
+                const currentQuestion = currentData.quiz[currentQuizIndex];
+                if (optionIdx === currentQuestion.correctIndex) {
+                    setScore(prev => prev + 10);
+                    triggerToast('תשובה נכונה! 10+ נקודות 🎉', 'success');
+                    playSound('success');
+                } else {
+                    triggerToast('תשובה לא נכונה, נסה שוב בשאלה הבאה! 😕', 'error');
+                    playSound('error');
+                }
+            };
+
+            const nextQuizQuestion = () => {
+                setSelectedOption(null);
+                setIsAnswered(false);
+                if (currentQuizIndex < currentData.quiz.length - 1) {
+                    setCurrentQuizIndex(prev => prev + 1);
+                } else {
+                    setQuizCompleted(true);
+                    triggerToast('סיימת את המבחן השבועי בהצלחה! 👑', 'level-up');
+                    playSound('level-up');
+                }
+            };
+
+            const restartQuiz = () => {
+                setCurrentQuizIndex(0);
+                setSelectedOption(null);
+                setIsAnswered(false);
+                setQuizCompleted(false);
+            };
+
+            // Battle Simulator Engine
+            const startBattle = () => {
+                if (!selectedWarrior) return;
+                const enemy = currentData.warriors.find(w => w.id !== selectedWarrior.id);
+                setPlayerHp(selectedWarrior.hp);
+                setEnemyHp(enemy.hp);
+                setPlayerEnergy(3);
+                setBattleLogs([`הדו-שיח החל! ${selectedWarrior.name} מתייצב מול ${enemy.name}.`]);
+                setBattleState('player-turn');
+                setIsBattling(true);
+                playSound('success');
+            };
+
+            const handlePlayCard = (card) => {
+                if (battleState !== 'player-turn' || playerEnergy < card.cost) return;
+                
+                setPlayerEnergy(prev => prev - card.cost);
+                const enemy = currentData.warriors.find(w => w.id !== selectedWarrior.id);
+                
+                if (card.type === 'attack') {
+                    const newHp = Math.max(0, enemyHp - card.power);
+                    setEnemyHp(newHp);
+                    setBattleLogs(prev => [`אתה משתמש ב"${card.name}" ומפחית ${card.power} כוח ל-${enemy.name}!`, ...prev]);
+                    playSound('click');
+                    
+                    if (newHp <= 0) {
+                        setBattleState('win');
+                        setBattleLogs(prev => [`🏆 ניצחון מוחץ! ${selectedWarrior.name} ניצח בדיון ויצא כשידו על העליונה!`, ...prev]);
+                        setScore(prev => prev + 50);
+                        playSound('level-up');
+                        return;
+                    }
+                } else if (card.type === 'heal') {
+                    const newHp = Math.min(selectedWarrior.maxHp, playerHp + card.power);
+                    setPlayerHp(newHp);
+                    setBattleLogs(prev => [`אתה משתמש ב"${card.name}" ומחזיר לעצמך ${card.power} כוחות רוחניים.`, ...prev]);
+                    playSound('success');
+                }
+
+                setBattleState('enemy-turn');
+                setTimeout(() => playEnemyTurn(playerHp, newHp => setPlayerHp(newHp)), 1500);
+            };
+
+            const playEnemyTurn = (currentPlHp, updatePlHp) => {
+                const enemy = currentData.warriors.find(w => w.id !== selectedWarrior.id);
+                const randomCard = enemy.deck[Math.floor(Math.random() * enemy.deck.length)];
+                setBattleLogs(prev => [`תורו של ${enemy.name}...`, ...prev]);
+
+                setTimeout(() => {
+                    if (randomCard.type === 'attack') {
+                        const newPlHp = Math.max(0, currentPlHp - randomCard.power);
+                        updatePlHp(newPlHp);
+                        setBattleLogs(prev => [`${enemy.name} הטיח בך את המקור/נשק "${randomCard.name}" והפחית לך ${randomCard.power} כוח!`, ...prev]);
+                        playSound('error');
+                        
+                        if (newPlHp <= 0) {
+                            setBattleState('lose');
+                            setBattleLogs(prev => [`😢 הפסד בדיון. ${enemy.name} שכנע את הקהל ועבר לטענה הבאה.`, ...prev]);
+                            return;
+                        }
+                    } else {
+                        setEnemyHp(prev => Math.min(enemy.maxHp, prev + randomCard.power));
+                        setBattleLogs(prev => [`${enemy.name} התחזק עם "${randomCard.name}" והשיב לעצמו ${randomCard.power} חיים.`, ...prev]);
+                        playSound('success');
+                    }
+                    
+                    setPlayerEnergy(3);
+                    setBattleState('player-turn');
+                }, 1000);
+            };
+
+            // AI Chavruta API call
+            const handleSaveApiKey = (e) => {
+                e.preventDefault();
+                if (apiKeyInput.trim()) {
+                    localStorage.setItem('gemara_spark_api_key', apiKeyInput.trim());
+                    setApiKey(apiKeyInput.trim());
+                    triggerToast('מפתח ה-API נשמר בהצלחה! 🔑', 'success');
+                }
+            };
+
+            const handleClearApiKey = () => {
+                localStorage.removeItem('gemara_spark_api_key');
+                setApiKey(window.GEMARA_SPARK_CONFIG?.apiKey || '');
+                setApiKeyInput('');
+                triggerToast('מפתח ה-API הוסר.', 'success');
+            };
+
+            const handleSendMessage = async (e) => {
+                e.preventDefault();
+                if (!userChatInput.trim() || isGenerating || !apiKey) return;
+                
+                const userText = userChatInput.trim();
+                const newMessages = [...chatMessages, { role: 'user', text: userText }];
+                setChatMessages(newMessages);
+                setUserChatInput('');
+                setIsGenerating(true);
+                playSound('click');
+
+                try {
+                    const isFreeStudy = selectedChatSugya === 'free-study';
+                    const activeSugyaObj = !isFreeStudy ? (currentData.sugyot.find(s => s.id === selectedChatSugya) || currentData.sugyot[0]) : null;
+                    
+                    let systemPrompt = '';
+                    if (isFreeStudy) {
+                        if (activeSubject === 'gemara') {
+                            systemPrompt = `
+You are a warm, sharp, and encouraging Talmudic study partner (chavruta) named "Chavruta AI" inside the GemaraSpark app.
+The user is in "Free Study" mode. You are ready to discuss ANY tractate, page, quote, or discussion in the entire Babylonian or Jerusalem Talmud (Shas), including commentaries like Rashi and Tosafot.
+Always respond in high-quality, friendly, and accessible modern Hebrew (RTL). Act as a Socratic study partner: do not simply lecture. Ask thought-provoking questions.
+                            `.trim();
+                        } else if (activeSubject === 'tanakh') {
+                            systemPrompt = `
+You are a warm, knowledgeable, and inspiring Biblical scholar (chavruta) named "Tanakh AI" inside the TanakhSpark app.
+The user is in "Free Study" mode. You are ready to discuss ANY book, chapter, verse, character, or language query in the entire Tanakh (Torah, Prophets, Writings), including classic commentaries like Rashi, Ramban, or Ibn Ezra.
+Always respond in high-quality, friendly, and accessible modern Hebrew (RTL). Act as a Socratic study partner: ask questions to lead them to discover Biblical insights.
+                            `.trim();
+                        } else {
+                            systemPrompt = `
+You are a mystical, deep, and warm Kabbalistic study partner named "Zohar AI" inside the ZoharSpark app.
+The user is in "Free Study" mode. You are ready to discuss Zohar passages, Kabbalistic concepts (Sephirot, Tzimtzum, Sitra Achra), mystical interpretations of Genesis, or Hebrew/Aramaic vocabulary related to Kabbalah.
+Always respond in high-quality, friendly, and accessible modern Hebrew (RTL). Maintain a respectful, Socratic, and deep tone, asking guiding questions about the spiritual paths and secrets.
+                            `.trim();
+                        }
+                    } else {
+                        systemPrompt = `
+You are a warm, sharp, and encouraging study partner (chavruta) named "${currentSub.title} AI".
+Currently, the user is studying the topic: "${activeSugyaObj.title}" (${activeSugyaObj.tractate}).
+Description of this topic: "${activeSugyaObj.description}".
+The steps of this topic are: ${JSON.stringify(activeSugyaObj.visualSteps)}.
+
+Rules for your behavior:
+1. Always respond in high-quality, friendly, and accessible modern Hebrew (RTL).
+2. Act as a Socratic study partner: ask thought-provoking questions to guide the user's understanding.
+3. Every factual claim must be backed by a source reference (e.g. verse, page, book, Rashi).
+4. Keep answers concise, clear, structured, and easy to read.
+5. If the user asks something completely unrelated to Jewish learning, politely guide them back.
+                        `.trim();
+                    }
+
+                    // Convert messages to Gemini format
+                    const contents = newMessages.map(m => ({
+                        role: m.role === 'model' ? 'model' : 'user',
+                        parts: [{ text: m.text }]
+                    }));
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            contents: contents,
+                            systemInstruction: {
+                                parts: [{ text: systemPrompt }]
+                            },
+                            generationConfig: {
+                                maxOutputTokens: 1000,
+                                temperature: 0.7
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.error?.message || 'שגיאה בחיבור לשרת Gemini');
+                    }
+
+                    const data = await response.json();
+                    const aiText = data.candidates[0].content.parts[0].text;
+                    setChatMessages(prev => [...prev, { role: 'model', text: aiText }]);
+                    triggerToast('החברותא ענה! 🤖', 'success');
+                } catch (err) {
+                    console.error(err);
+                    setChatMessages(prev => [...prev, { role: 'model', text: `אופס, חלה שגיאה: ${err.message}. אנא ודא שמפתח ה-API שלך תקין.` }]);
+                    triggerToast('חלה שגיאה בחיבור ל-AI', 'error');
+                } finally {
+                    setIsGenerating(false);
+                }
+            };
+
+            const filteredDictionary = currentData.dictionary.filter(item => 
+                item.word.includes(dictSearch) || item.meaning.includes(dictSearch)
+            );
+
+            return (
+                <div className="min-h-screen flex flex-col justify-between">
+                    {/* Header */}
+                    <header className="border-b border-gray-800 bg-[#0f172a] py-4 px-6 sticky top-0 z-50 shadow-lg">
+                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setActiveTab('home'); playSound('click'); }}>
+                                <div className={`bg-gradient-to-r ${currentSub.gradient} text-slate-950 p-2.5 rounded-2xl shadow-md`}>
+                                    <i className={`fa-solid ${currentSub.icon} text-xl`}></i>
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-black tracking-tight text-white">{currentSub.title}</h1>
+                                    <p className="text-[9px] font-bold text-gray-500 tracking-wider font-outfit uppercase">{currentSub.subtitle}</p>
+                                </div>
+                            </div>
+
+                            {/* Mode/Subject Selectors (Circled in user request) */}
+                            <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-2xl border border-slate-900 shadow-inner">
+                                {Object.values(SUBJECTS).map(sub => (
+                                    <button
+                                        key={sub.id}
+                                        onClick={() => { setActiveSubject(sub.id); playSound('level-up'); }}
+                                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all ${
+                                            activeSubject === sub.id
+                                                ? `bg-gradient-to-r ${sub.gradient} text-slate-950 shadow-lg shadow-${sub.color}-500/10`
+                                                : 'text-gray-400 hover:text-white hover:bg-slate-900/60'
+                                        }`}
+                                    >
+                                        <i className={`fa-solid ${sub.icon}`}></i>
+                                        <span>{sub.title}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Streak & Level */}
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 bg-slate-950/40 border border-slate-900 py-1.5 px-3 rounded-full text-xs font-bold text-gray-400">
+                                    <i className="fa-solid fa-fire text-orange-500 animate-pulse"></i>
+                                    <span>{streak} ימים רצוף</span>
+                                </div>
+                                <div className={`bg-gradient-to-r ${currentSub.gradient} text-slate-950 text-xs font-bold py-1.5 px-4 rounded-full shadow-lg`}>
+                                    רמה: תלמיד חכם
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Toast Notification */}
+                    {toast.show && (
+                        <div className={`fixed top-24 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-xl border shadow-2xl transition-all duration-300 animate-bounce ${
+                            toast.type === 'success' ? 'bg-emerald-950/95 border-emerald-500 text-emerald-200' :
+                            toast.type === 'error' ? 'bg-rose-950/95 border-rose-500 text-rose-200' :
+                            'bg-blue-950/95 border-blue-500 text-blue-200'
+                        }`}>
+                        <i className={`fa-solid ${toast.type === 'success' ? 'fa-circle-check text-emerald-400' : toast.type === 'error' ? 'fa-circle-exclamation text-rose-400' : 'fa-wand-magic-sparkles text-blue-400'}`}></i>
+                            <span className="font-semibold text-sm">{toast.message}</span>
+                        </div>
+                    )}
+
+                    <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-grow">
+                        {/* Navigation Tabs */}
+                        <div className="flex flex-wrap justify-center gap-2 mb-8 bg-slate-950/40 p-1.5 rounded-2xl border border-slate-900">
+                            {[
+                                { id: 'home', label: 'דאשבורד ראשי', icon: 'fa-house-chimney' },
+                                { id: 'sugyot', label: 'לימוד מובנה 📖', icon: 'fa-book-open' },
+                                { id: 'battle', label: 'סימולטור קרב מוחות ⚔️', icon: 'fa-brain' },
+                                { id: 'chavruta', label: 'שותף לימוד AI 🤖', icon: 'fa-comments' },
+                                { id: 'dictionary', label: 'מילון מונחים 📚', icon: 'fa-spell-check' },
+                                { id: 'quiz', label: 'חידון האלופים 👑', icon: 'fa-ranking-star' }
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => { setActiveTab(tab.id); playSound('click'); }}
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all duration-200 text-sm ${
+                                        activeTab === tab.id
+                                            ? `bg-gradient-to-r ${currentSub.gradient} text-slate-950 shadow-lg shadow-${currentSub.color}-500/20`
+                                            : 'text-gray-400 hover:text-white hover:bg-slate-900/60'
+                                    }`}
+                                >
+                                    <i className={`fa-solid ${tab.icon}`}></i>
+                                    <span>{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* HOME / DASHBOARD TAB */}
+                        {activeTab === 'home' && (
+                            <div className="space-y-8 animate-fadeIn">
+                                <div className="text-center max-w-xl mx-auto space-y-3">
+                                    <h2 className="text-4xl font-black text-white">{currentSub.dashboardTitle}</h2>
+                                    <p className="text-gray-400 text-sm">התקדמות הלימוד השבועית והאישית שלך. בחר סעיף למידה והמשך לצבור נקודות!</p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition-all flex flex-col justify-between">
+                                        <div className="space-y-2">
+                                            <div className={`text-2xl ${currentSub.text}`}><i className="fa-solid fa-graduation-cap"></i></div>
+                                            <h3 className="text-lg font-bold text-white">הלימוד היומי שלי</h3>
+                                            <p className="text-xs text-gray-500">עבור על הסוגיות המובנות של {currentSub.title} צעד אחר צעד.</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => { setActiveTab('sugyot'); playSound('click'); }}
+                                            className={`w-full font-bold py-2.5 px-4 rounded-xl text-xs mt-4 transition-all ${currentSub.btnClass}`}
+                                        >
+                                            התחל ללמוד
+                                        </button>
+                                    </div>
+
+                                    <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition-all flex flex-col justify-between">
+                                        <div className="space-y-2">
+                                            <div className={`text-2xl ${currentSub.text}`}><i className="fa-solid fa-trophy"></i></div>
+                                            <h3 className="text-lg font-bold text-white">ניקוד ורמות</h3>
+                                            <div className="text-3xl font-black text-white">{score} XP</div>
+                                            <p className="text-xs text-gray-500">צברת {score} נקודות מתוך חידונים וקרבות מוחות.</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => { setActiveTab('quiz'); playSound('click'); }}
+                                            className="w-full bg-slate-800 hover:bg-slate-750 text-white font-bold py-2.5 px-4 rounded-xl text-xs mt-4 transition-all"
+                                        >
+                                            לחידון השבועי
+                                        </button>
+                                    </div>
+
+                                    <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition-all flex flex-col justify-between">
+                                        <div className="space-y-2">
+                                            <div className={`text-2xl ${currentSub.text}`}><i className="fa-solid fa-message"></i></div>
+                                            <h3 className="text-lg font-bold text-white">חברותא דיגיטלי</h3>
+                                            <p className="text-xs text-gray-500">שוחח על כל נושא ועמוד בש"ס, בתנ"ך או בזוהר עם שותף לימוד המונע בבינה מלאכותית.</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => { setActiveTab('chavruta'); playSound('click'); }}
+                                            className={`w-full font-bold py-2.5 px-4 rounded-xl text-xs mt-4 transition-all ${currentSub.btnClass}`}
+                                        >
+                                            פתח צ'אט
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SUGYOT / INHERENT STUDY TAB */}
+                        {activeTab === 'sugyot' && (
+                            <div className="space-y-8 animate-fadeIn">
+                                <div className="text-center max-w-xl mx-auto space-y-2">
+                                    <h2 className="text-3xl font-black text-white">מסלול הלימוד המובנה</h2>
+                                    <p className="text-gray-400 text-sm">למד את הנושאים והפרקים המובילים דרך המחשה מודרנית ואינטראקטיבית.</p>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                                    {/* Sidebar: List of Topics */}
+                                    <div className="lg:col-span-1 space-y-3">
+                                        <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest block px-2">נושאי לימוד:</h3>
+                                        {currentData.sugyot.map(sug => (
+                                            <button
+                                                key={sug.id}
+                                                onClick={() => { setSelectedSugya(sug); setSugyaStep(0); playSound('click'); }}
+                                                className={`w-full text-right p-4 rounded-2xl border transition-all ${
+                                                    selectedSugya?.id === sug.id
+                                                        ? `bg-[#0f172a] ${currentSub.border} ${currentSub.text}`
+                                                        : 'bg-slate-900/20 border-slate-900 text-gray-400 hover:text-white hover:bg-slate-900/60'
+                                                }`}
+                                            >
+                                                <span className="font-bold block text-sm">{sug.title}</span>
+                                                <span className="text-[10px] text-gray-500 mt-1 block">{sug.tractate}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Main: Visual Stepper Component */}
+                                    {selectedSugya && (
+                                        <div className="lg:col-span-3 bg-slate-900/40 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6">
+                                            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                                                <div>
+                                                    <span className={`inline-block text-[10px] font-bold py-1 px-2.5 rounded-full border mb-2 ${currentSub.badgeBg}`}>
+                                                        רמת קושי: {selectedSugya.difficulty}
+                                                    </span>
+                                                    <h3 className="text-2xl font-black text-white">{selectedSugya.title}</h3>
+                                                    <p className="text-gray-400 text-xs mt-1">{selectedSugya.tractate} • {selectedSugya.description}</p>
+                                                </div>
+
+                                                {/* Step Pills */}
+                                                <div className="flex items-center gap-1.5 bg-slate-950/40 p-1 rounded-xl border border-slate-900">
+                                                    {selectedSugya.visualSteps.map((_, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => { setSugyaStep(idx); playSound('click'); }}
+                                                            className={`w-6 h-6 rounded-lg text-xs font-bold transition-all ${
+                                                                sugyaStep === idx
+                                                                    ? `bg-gradient-to-r ${currentSub.gradient} text-slate-950`
+                                                                    : 'text-gray-500 hover:text-white'
+                                                            }`}
+                                                        >
+                                                            {idx + 1}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Chat Bubble Simulation */}
+                                            <div className="space-y-4 bg-slate-950/50 p-6 rounded-2xl border border-slate-900">
+                                                <div className="flex items-start gap-3">
+                                                    <div className={`w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-sm shrink-0 border ${currentSub.border}`}>
+                                                        👤
+                                                    </div>
+                                                    <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl rounded-tr-none max-w-xl">
+                                                        <span className="text-[10px] font-black text-gray-500 block mb-1 uppercase tracking-wider">{selectedSugya.visualSteps[sugyaStep].character}</span>
+                                                        <p className="text-sm text-gray-200 whitespace-pre-line leading-relaxed font-semibold">
+                                                            {selectedSugya.visualSteps[sugyaStep].dialogue}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Explanation */}
+                                                <div className="flex items-start gap-3 justify-end">
+                                                    <div className="bg-slate-900/60 border border-slate-850 p-4 rounded-2xl rounded-tl-none max-w-xl">
+                                                        <span className="text-[10px] font-black text-gray-500 block mb-1 uppercase tracking-wider">ביאור וניתוח</span>
+                                                        <p className="text-xs text-gray-400 leading-relaxed">
+                                                            {selectedSugya.visualSteps[sugyaStep].explanation}
+                                                        </p>
+                                                    </div>
+                                                    <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${currentSub.gradient} text-slate-950 flex items-center justify-center font-bold text-xs shrink-0`}>
+                                                        💡
+                                                    </div>
+                                                </div>
+
+                                                {/* Modern Translation/Slang */}
+                                                <div className="mt-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center gap-3">
+                                                    <div className="text-lg">💬</div>
+                                                    <div>
+                                                        <span className="text-[10px] font-bold text-amber-400 block uppercase">תכלס בשפה שלנו</span>
+                                                        <p className="text-xs text-gray-400 mt-0.5">{selectedSugya.visualSteps[sugyaStep].slang}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Stepper Buttons */}
+                                            <div className="flex items-center justify-between pt-2">
+                                                <button
+                                                    onClick={() => { setSugyaStep(prev => Math.max(0, prev - 1)); playSound('click'); }}
+                                                    disabled={sugyaStep === 0}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                                        sugyaStep === 0 
+                                                            ? 'border-slate-800 text-gray-600 cursor-not-allowed'
+                                                            : 'border-slate-700 text-white hover:bg-slate-800'
+                                                    }`}
+                                                >
+                                                    קודם
+                                                </button>
+
+                                                <button
+                                                    onClick={() => {
+                                                        if (sugyaStep < selectedSugya.visualSteps.length - 1) {
+                                                            setSugyaStep(prev => prev + 1);
+                                                            playSound('click');
+                                                        } else {
+                                                            triggerToast('סיימתם את לימוד הנושא בהצלחה! 🎓', 'success');
+                                                            playSound('success');
+                                                        }
+                                                    }}
+                                                    className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${currentSub.btnClass}`}
+                                                >
+                                                    {sugyaStep === selectedSugya.visualSteps.length - 1 ? 'סיום והבנה ✔️' : 'הבא'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* BATTLE SIMULATOR TAB */}
+                        {activeTab === 'battle' && (
+                            <div className="space-y-8 animate-fadeIn">
+                                <div className="text-center max-w-xl mx-auto space-y-2">
+                                    <h2 className="text-3xl font-black text-white">{currentSub.battleTitle}</h2>
+                                    <p className="text-gray-400 text-sm">{currentSub.battleSubtitle}</p>
+                                </div>
+
+                                {!isBattling ? (
+                                    /* Selection screen */
+                                    <div className="max-w-2xl mx-auto space-y-6">
+                                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest text-center">בחר את הדמות שלך לדו-שיח:</h3>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            {currentData.warriors.map(char => (
+                                                <div
+                                                    key={char.id}
+                                                    onClick={() => { setSelectedWarrior(char); playSound('click'); }}
+                                                    className={`bg-slate-900 border rounded-3xl p-6 text-center cursor-pointer transition-all ${
+                                                        selectedWarrior?.id === char.id
+                                                            ? `border-amber-500 shadow-lg shadow-amber-500/10`
+                                                            : 'border-slate-800 hover:border-slate-700'
+                                                    }`}
+                                                >
+                                                    <div className="text-6xl mb-4">{char.avatar}</div>
+                                                    <h4 className="text-xl font-bold text-white">{char.name}</h4>
+                                                    <span className="text-xs text-gray-500 font-semibold">{char.title}</span>
+                                                    <p className="text-xs text-gray-400 mt-3 leading-relaxed">
+                                                        לחבילת הקלפים שלו יש שילוב של קושיות חזקות, מקורות רוחניים וחיזוק הטיעונים שלו.
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <button
+                                            onClick={startBattle}
+                                            disabled={!selectedWarrior}
+                                            className={`w-full font-black py-4 rounded-2xl text-sm transition-all shadow-lg ${
+                                                selectedWarrior 
+                                                    ? currentSub.btnClass
+                                                    : 'bg-slate-800 text-gray-500 cursor-not-allowed shadow-none'
+                                            }`}
+                                        >
+                                            התחל את הדו-שיח ⚔️
+                                        </button>
+                                    </div>
+                                ) : (
+                                    /* Active Battle screen */
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                                        {/* Left: Warrior Status & Action Deck */}
+                                        <div className="lg:col-span-2 space-y-6">
+                                            {/* Health bars */}
+                                            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 grid grid-cols-2 gap-8 shadow-xl">
+                                                {/* Player */}
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-2xl">{selectedWarrior.avatar}</span>
+                                                        <div>
+                                                            <h4 className="font-bold text-white text-sm">{selectedWarrior.name} (אתה)</h4>
+                                                            <span className="text-[10px] text-gray-500">{selectedWarrior.title}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800">
+                                                        <div 
+                                                            className={`bg-emerald-500 h-full transition-all duration-300`} 
+                                                            style={{ width: `${(playerHp / selectedWarrior.maxHp) * 100}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-xs font-bold text-gray-300 block">{playerHp} / {selectedWarrior.maxHp} HP</span>
+                                                </div>
+
+                                                {/* Enemy */}
+                                                <div className="space-y-2">
+                                                    {(() => {
+                                                        const enemy = currentData.warriors.find(w => w.id !== selectedWarrior.id);
+                                                        return (
+                                                            <>
+                                                                <div className="flex items-center gap-2 justify-end">
+                                                                    <div className="text-left">
+                                                                        <h4 className="font-bold text-white text-sm">{enemy.name}</h4>
+                                                                        <span className="text-[10px] text-gray-500">{enemy.title}</span>
+                                                                    </div>
+                                                                    <span className="text-2xl">{enemy.avatar}</span>
+                                                                </div>
+                                                                <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800">
+                                                                    <div 
+                                                                        className={`bg-rose-500 h-full transition-all duration-300`} 
+                                                                        style={{ width: `${(enemyHp / enemy.maxHp) * 100}%` }}
+                                                                    ></div>
+                                                                </div>
+                                                                <span className="text-xs font-bold text-gray-300 block text-left">{enemyHp} / {enemy.maxHp} HP</span>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            </div>
+
+                                            {/* Action Cards */}
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between px-2">
+                                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">בחר קלף טיעון:</span>
+                                                    <span className="text-xs font-bold text-amber-400">אנרגיה: {playerEnergy} / 3 ⚡</span>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-4">
+                                                    {selectedWarrior.deck.map((card, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => handlePlayCard(card)}
+                                                            disabled={battleState !== 'player-turn' || playerEnergy < card.cost}
+                                                            className={`bg-slate-900 border rounded-2xl p-4 text-right transition-all flex flex-col justify-between h-40 ${
+                                                                battleState === 'player-turn' && playerEnergy >= card.cost
+                                                                    ? 'border-slate-800 hover:border-amber-500 cursor-pointer'
+                                                                    : 'border-slate-950 opacity-40 cursor-not-allowed'
+                                                            }`}
+                                                        >
+                                                            <div>
+                                                                <div className="flex items-center justify-between border-b border-slate-850 pb-1.5 mb-2">
+                                                                    <span className="font-bold text-white text-xs">{card.name}</span>
+                                                                    <span className="text-[10px] text-amber-500 font-bold">{card.cost} ⚡</span>
+                                                                </div>
+                                                                <p className="text-[10px] text-gray-400 leading-relaxed">{card.desc}</p>
+                                                            </div>
+                                                            <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest text-left mt-2">
+                                                                {card.type === 'attack' ? 'נזק / קושיה ⚔️' : 'בריאות / תירוץ 💖'}
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Right: Duel Log Panel */}
+                                        <div className="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between h-[450px]">
+                                            <div className="space-y-4 overflow-y-auto flex-grow pr-1">
+                                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-slate-850 pb-2">מהלך הדיון:</h4>
+                                                <div className="space-y-3">
+                                                    {battleLogs.map((log, index) => (
+                                                        <div key={index} className="text-xs text-gray-300 bg-slate-950/40 p-2.5 rounded-xl border border-slate-900 leading-relaxed animate-fadeIn">
+                                                            {log}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* End state action buttons */}
+                                            {['win', 'lose'].includes(battleState) && (
+                                                <button
+                                                    onClick={() => setIsBattling(false)}
+                                                    className={`w-full font-bold py-3 rounded-xl text-xs mt-4 transition-all ${currentSub.btnClass}`}
+                                                >
+                                                    חזור לבחירת דמויות
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* DICTIONARY TAB */}
+                        {activeTab === 'dictionary' && (
+                            <div className="space-y-8 animate-fadeIn">
+                                <div className="text-center max-w-xl mx-auto space-y-2">
+                                    <h2 className="text-3xl font-black text-white">{currentSub.dictTitle}</h2>
+                                    <p className="text-gray-400 text-sm">{currentSub.dictSubtitle}</p>
+                                </div>
+
+                                <div className="max-w-md mx-auto relative">
+                                    <input
+                                        type="text"
+                                        placeholder="חיפוש מונח או פירוש..."
+                                        value={dictSearch}
+                                        onChange={(e) => setDictSearch(e.target.value)}
+                                        className="w-full bg-slate-900 border border-slate-800 rounded-2xl py-3.5 px-12 text-sm text-white focus:outline-none focus:border-amber-500 transition-all placeholder-gray-600"
+                                    />
+                                    <i className="fa-solid fa-magnifying-glass absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"></i>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {filteredDictionary.map((item, idx) => (
+                                        <div
+                                            key={idx}
+                                            onClick={() => { setFlippedCardIndex(flippedCardIndex === idx ? null : idx); playSound('click'); }}
+                                            className="h-44 group [perspective:1000px] cursor-pointer"
+                                        >
+                                            <div className={`relative w-full h-full rounded-3xl border transition-all duration-500 [transform-style:preserve-3d] ${
+                                                flippedCardIndex === idx 
+                                                    ? '[transform:rotateY(180deg)] border-amber-500 bg-slate-900' 
+                                                    : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+                                            }`}>
+                                                {/* Front Side */}
+                                                <div className="absolute inset-0 w-full h-full p-6 flex flex-col justify-between [backface-visibility:hidden]">
+                                                    <span className={`inline-block self-start text-[10px] font-bold py-1 px-2.5 rounded-full border ${currentSub.badgeBg}`}>
+                                                        {item.type}
+                                                    </span>
+                                                    <h4 className={`text-2xl font-black text-center ${currentSub.text}`}>{item.word}</h4>
+                                                    <span className="text-[10px] text-gray-500 text-center block">לחצו כדי להפוך את הכרטיס</span>
+                                                </div>
+
+                                                {/* Back Side */}
+                                                <div className="absolute inset-0 w-full h-full p-6 flex flex-col justify-between [backface-visibility:hidden] [transform:rotateY(180deg)] bg-slate-900">
+                                                    <div>
+                                                        <span className="text-[10px] font-bold text-amber-400 block mb-1">פירוש מילולי:</span>
+                                                        <p className="text-xs font-semibold text-gray-200">{item.meaning}</p>
+                                                    </div>
+                                                    <div className="border-t border-slate-850 pt-2">
+                                                        <span className="text-[9px] font-bold text-gray-500 block uppercase">תחשוב על זה כמו:</span>
+                                                        <p className="text-[10px] text-gray-400 mt-0.5">{item.association}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* QUIZ TAB */}
+                        {activeTab === 'quiz' && (
+                            <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn">
+                                <div className="text-center space-y-2">
+                                    <h2 className="text-3xl font-black text-white">{currentSub.quizTitle}</h2>
+                                    <p className="text-gray-400 text-sm">בחן את ההבנה והידע שלך. כל תשובה נכונה מעניקה 10 נקודות XP!</p>
+                                </div>
+
+                                {!quizCompleted ? (
+                                    /* Active Quiz question card */
+                                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
+                                        <div className="flex items-center justify-between border-b border-slate-850 pb-4">
+                                            <span className="text-xs font-bold text-gray-500">שאלה {currentQuizIndex + 1} מתוך {currentData.quiz.length}</span>
+                                            <span className="text-xs font-bold text-amber-500">XP שנצבר: {score}</span>
+                                        </div>
+
+                                        <h3 className="text-lg font-bold text-white leading-relaxed">
+                                            {currentData.quiz[currentQuizIndex].question}
+                                        </h3>
+
+                                        <div className="space-y-3">
+                                            {currentData.quiz[currentQuizIndex].options.map((option, idx) => {
+                                                let btnStyle = 'border-slate-800 bg-slate-950/40 text-gray-300 hover:border-slate-700';
+                                                if (isAnswered) {
+                                                    if (idx === currentData.quiz[currentQuizIndex].correctIndex) {
+                                                        btnStyle = 'border-emerald-500 bg-emerald-950/20 text-emerald-300 font-bold';
+                                                    } else if (idx === selectedOption) {
+                                                        btnStyle = 'border-rose-500 bg-rose-950/20 text-rose-300';
+                                                    } else {
+                                                        btnStyle = 'border-slate-900 bg-slate-950/20 text-gray-600';
+                                                    }
+                                                }
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => handleAnswerSubmit(idx)}
+                                                        disabled={isAnswered}
+                                                        className={`w-full text-right p-4 rounded-xl border text-sm transition-all flex items-center justify-between ${btnStyle}`}
+                                                    >
+                                                        <span>{option}</span>
+                                                        {isAnswered && idx === currentData.quiz[currentQuizIndex].correctIndex && (
+                                                            <i className="fa-solid fa-check text-emerald-400"></i>
+                                                        )}
+                                                        {isAnswered && idx === selectedOption && idx !== currentData.quiz[currentQuizIndex].correctIndex && (
+                                                            <i className="fa-solid fa-xmark text-rose-400"></i>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {isAnswered && (
+                                            <button
+                                                onClick={nextQuizQuestion}
+                                                className={`w-full font-bold py-3.5 rounded-xl text-xs transition-all ${currentSub.btnClass}`}
+                                            >
+                                                {currentQuizIndex === currentData.quiz.length - 1 ? 'סיים מבחן 🏆' : 'לשאלה הבאה'}
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    /* Completion screen */
+                                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
+                                        <div className="bg-amber-500/10 text-amber-400 w-20 h-20 rounded-3xl flex items-center justify-center text-4xl mx-auto">
+                                            <i className="fa-solid fa-trophy"></i>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h3 className="text-2xl font-black text-white">כל הכבוד! סיימת את המבחן!</h3>
+                                            <p className="text-gray-400 text-xs">ענית על כל שאלות הבוחן בהצלחה וצברת נקודות ניסיון.</p>
+                                        </div>
+                                        <div className="bg-slate-950/50 p-4 rounded-2xl inline-block border border-slate-850">
+                                            <span className="text-[10px] text-gray-500 font-bold block uppercase">ציון סופי</span>
+                                            <span className={`text-3xl font-black ${currentSub.text}`}>{score} XP</span>
+                                        </div>
+                                        <button
+                                            onClick={restartQuiz}
+                                            className="w-full bg-slate-800 hover:bg-slate-750 text-white font-bold py-3 rounded-xl text-xs transition-all"
+                                        >
+                                            התחל בוחן מחדש
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* CHAVRUTA AI CHAT TAB */}
+                        {activeTab === 'chavruta' && (
+                            <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto">
+                                <div className="text-center max-w-xl mx-auto space-y-2">
+                                    <h2 className="text-3xl font-black text-white">שותף לימוד AI 🤖✨</h2>
+                                    <p className="text-gray-400 text-sm">פתח שיח סוקרטי, שאל שאלות, פתח קושיות והעמק בלמידה עם בינה מלאכותית!</p>
+                                </div>
+
+                                {!apiKey ? (
+                                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 max-w-md mx-auto shadow-2xl">
+                                        <div className="text-center space-y-2">
+                                            <div className="bg-amber-500/10 text-amber-400 w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+                                                <i className="fa-solid fa-key"></i>
+                                            </div>
+                                            <h3 className="text-xl font-bold text-white">חיבור ל-Gemini API</h3>
+                                            <p className="text-gray-400 text-xs leading-relaxed">
+                                                האפליקציה פועלת ישירות מהדפדפן שלך. כדי להפעיל את הלימוד האינטראקטיבי וחילוץ המסמכים, עליך להזין מפתח API של Gemini (הוא נשמר רק על המחשב שלך באופן מקומי).
+                                            </p>
+                                        </div>
+
+                                        <form onSubmit={handleSaveApiKey} className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-gray-300 block">מפתח API של Gemini:</label>
+                                                <input
+                                                    type="password"
+                                                    placeholder="הכנס מפתח APIzaSy..."
+                                                    value={apiKeyInput}
+                                                    onChange={(e) => setApiKeyInput(e.target.value)}
+                                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-amber-500 transition-all placeholder-gray-600"
+                                                />
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition-all text-sm shadow-lg shadow-amber-500/20"
+                                            >
+                                                שמור והפעל ממשק
+                                            </button>
+                                        </form>
+
+                                        <div className="text-center pt-2 border-t border-slate-800">
+                                            <a
+                                                href="https://aistudio.google.com/"
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-xs text-amber-400 hover:text-amber-300 underline font-bold flex items-center justify-center gap-1"
+                                            >
+                                                <span>קבל מפתח API בחינם מ-Google AI Studio</span>
+                                                <i className="fa-solid fa-up-right-from-square text-[10px]"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                                        {/* Chat configuration sidebar */}
+                                        <div className="lg:col-span-1 border-b lg:border-b-0 lg:border-l border-slate-800 pb-4 lg:pb-0 lg:pl-6 space-y-6 flex flex-col justify-between">
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-extrabold text-gray-400 uppercase tracking-widest block">בחר סוגיה למיקוד ה-AI:</label>
+                                                    <div className="space-y-2">
+                                                        <button
+                                                            onClick={() => { setSelectedChatSugya('free-study'); playSound('click'); }}
+                                                            className={`w-full text-right px-4 py-3 rounded-xl text-xs font-bold transition-all border ${
+                                                                selectedChatSugya === 'free-study'
+                                                                    ? `bg-${currentSub.color}-500/10 border-${currentSub.color}-500 ${currentSub.text}`
+                                                                    : 'bg-slate-950/40 border-slate-800/80 text-gray-400 hover:bg-slate-950/80 hover:text-white'
+                                                            }`}
+                                                        >
+                                                            <div className="font-extrabold flex items-center gap-1.5">
+                                                                <i className="fa-solid fa-graduation-cap"></i>
+                                                                <span>📚 לימוד חופשי (כל הש"ס)</span>
+                                                            </div>
+                                                            <div className="text-[10px] opacity-60 mt-0.5">שאל על כל דף, מונח או סוגיה</div>
+                                                        </button>
+
+                                                        {currentData.sugyot.map(sug => (
+                                                            <button
+                                                                key={sug.id}
+                                                                onClick={() => { setSelectedChatSugya(sug.id); playSound('click'); }}
+                                                                className={`w-full text-right px-4 py-3 rounded-xl text-xs font-bold transition-all border ${
+                                                                    selectedChatSugya === sug.id
+                                                                        ? `bg-${currentSub.color}-500/10 border-${currentSub.color}-500 ${currentSub.text}`
+                                                                        : 'bg-slate-950/40 border-slate-800/80 text-gray-400 hover:bg-slate-950/80 hover:text-white'
+                                                                }`}
+                                                            >
+                                                                <div className="font-bold">{sug.title}</div>
+                                                                <div className="text-[10px] opacity-60 mt-0.5">{sug.tractate}</div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-[10px] text-gray-400 leading-relaxed">
+                                                    <span className="font-bold text-white block mb-1">מצב מחובר:</span>
+                                                    {selectedChatSugya === 'free-study' 
+                                                        ? `החברותא במצב "לימוד חופשי" ויכול לענות על כל מסכת, דף או סוגיה בנושא! שאל אותו על כל נושא שתרצה.` 
+                                                        : `החברותא מכיר כעת את דפי הגמרא שבחרת. שאל אותו שאלות כמו "למה אביי טוען ככה?" או "מה ההבדל בין ייאוש מדעת לשלא מדעת?".`}
+                                                </div>
+                                                <button
+                                                    onClick={handleClearApiKey}
+                                                    className="w-full bg-slate-900 border border-slate-800 hover:bg-slate-850 text-rose-400 font-bold py-2.5 rounded-xl transition-all text-xs"
+                                                >
+                                                    🔑 הסר מפתח API
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Chat Conversation pane */}
+                                        <div className="lg:col-span-3 flex flex-col justify-between bg-slate-900/40 border border-slate-800 rounded-3xl p-5 shadow-xl h-[550px]">
+                                            {/* Chat History */}
+                                            <div className="space-y-4 overflow-y-auto flex-grow mb-4 pr-1">
+                                                {chatMessages.map((msg, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className={`flex items-start gap-3 animate-fadeIn ${msg.role === 'user' ? 'justify-end' : ''}`}
+                                                    >
+                                                        {msg.role !== 'user' && (
+                                                            <div className={`w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-sm shrink-0 border ${currentSub.border}`}>
+                                                                🤖
+                                                            </div>
+                                                        )}
+                                                        <div className={`p-4 rounded-2xl max-w-xl leading-relaxed text-sm ${
+                                                            msg.role === 'user'
+                                                                ? `bg-gradient-to-r ${currentSub.gradient} text-slate-950 font-bold rounded-tl-none`
+                                                                : 'bg-slate-950/60 border border-slate-850 text-gray-200 rounded-tr-none'
+                                                        }`}>
+                                                            {msg.text}
+                                                        </div>
+                                                        {msg.role === 'user' && (
+                                                            <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${currentSub.gradient} text-slate-950 flex items-center justify-center font-bold text-xs shrink-0`}>
+                                                                👤
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                {isGenerating && (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className={`w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-sm shrink-0 border ${currentSub.border}`}>
+                                                            🤖
+                                                        </div>
+                                                        <div className="bg-slate-950/60 border border-slate-850 p-4 rounded-2xl rounded-tr-none text-gray-400 text-xs flex items-center gap-2">
+                                                            <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce"></div>
+                                                            <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                                                            <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                                                            <span>החברותא חושב...</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Chat Input form */}
+                                            <form onSubmit={handleSendMessage} className="flex gap-3 border-t border-slate-800/60 pt-4 shrink-0">
+                                                <input
+                                                    type="text"
+                                                    value={userChatInput}
+                                                    onChange={(e) => setUserChatInput(e.target.value)}
+                                                    disabled={isGenerating}
+                                                    placeholder="כתוב הודעה לחברותא הדיגיטלי..."
+                                                    className="flex-grow bg-slate-950 border border-slate-800/80 rounded-2xl py-3 px-4 text-white text-sm focus:outline-none focus:border-amber-500 transition-all placeholder-gray-600"
+                                                />
+                                                <button
+                                                    type="submit"
+                                                    disabled={!userChatInput.trim() || isGenerating}
+                                                    className={`px-6 py-3.5 rounded-2xl font-black text-sm transition-all flex items-center gap-2 ${
+                                                        !userChatInput.trim() || isGenerating
+                                                            ? 'bg-slate-800 text-gray-500 cursor-not-allowed'
+                                                            : `${currentSub.btnClass}`
+                                                    }`}
+                                                >
+                                                    <span>שלח</span>
+                                                    <i className="fa-solid fa-paper-plane-rtl"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="border-t border-gray-800 bg-[#0f172a] py-6 px-6 text-center text-xs text-gray-500">
+                        <div className="max-w-7xl mx-auto space-y-2">
+                            <p>© 2026 Spark. כל הזכויות שמורות לבית המדרש הדיגיטלי החדש.</p>
+                            <p>נבנה באהבה להנגשת ארון הספרים היהודי לדור הבא 📖✨</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
